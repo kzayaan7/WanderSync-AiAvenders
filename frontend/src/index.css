@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    background-image:
+      radial-gradient(100% 60% at 100% 0%, rgba(15, 118, 110, 0.05) 0%, rgba(248, 250, 252, 0) 60%),
+      radial-gradient(80% 50% at 0% 100%, rgba(249, 115, 22, 0.04) 0%, rgba(248, 250, 252, 0) 60%);
+    color: #0F172A;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.01em;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.025em;
+  }
+
+  button, input, select, textarea, nav a {
+    letter-spacing: 0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid #0F766E;
+    outline-offset: 2px;
+  }
+}
+
+/* Explicit Color Utilities */
+.bg-primary { background-color: #0F766E !important; }
+.bg-primary-hover:hover, .hover\:bg-primary-hover:hover { background-color: #0D6760 !important; }
+.bg-primary-light { background-color: #CCFBF1 !important; }
+
+.bg-secondary { background-color: #F97316 !important; }
+.bg-secondary-hover:hover, .hover\:bg-secondary-hover:hover { background-color: #EA580C !important; }
+.bg-secondary-light { background-color: #FFEDD5 !important; }
+
+.bg-tertiary { background-color: #0EA5E9 !important; }
+
+.text-primary { color: #0F766E !important; }
+.text-secondary { color: #F97316 !important; }
+.text-tertiary { color: #0EA5E9 !important; }
+
+.border-primary { border-color: #0F766E !important; }
+.border-secondary { border-color: #F97316 !important; }
+
+/* WanderMap Surface Card */
+.wandermap-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 30px -5px rgba(15, 118, 110, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+}
+
+/* WanderMap Form Input */
+.wandermap-input {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #0F172A;
+  transition: all 0.2s ease-in-out;
+}
+.wandermap-input::placeholder {
+  color: #94A3B8;
+}
+.wandermap-input:focus {
+  background: #FFFFFF;
+  border-color: #0F766E !important;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+}
+
+/* Boarding Pass / Ticket Stub Styling - WanderMap Light Edition */
+.ticket-stub {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+}
+.ticket-stub::before,
+.ticket-stub::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  border-radius: 999px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ticket-stub::before { left: -9px; }
+.ticket-stub::after { right: -9px; }
+
+.ticket-perforation {
+  border-left: 2px dashed #CBD5E1;
+}
+
+.barcode {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #0F766E 0px,
+    #0F766E 1px,
+    transparent 1px,
+    transparent 3px,
+    #0F766E 3px,
+    #0F766E 5px,
+    transparent 5px,
+    transparent 8px
+  );
+}
+
+/* Custom Leaflet Map Pin Overrides */
+.custom-leaflet-marker {
+  background: none;
+  border: none;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 118, 110, 0.2) !important;
+  padding: 4px !important;
+}
+.leaflet-popup-tip {
+  background: #FFFFFF !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0F766E;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Typing animation */
+@keyframes typingDot {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.1); }
+}
+.typing-dot {
+  animation: typingDot 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Travel Airplane & Radar Animations */
+@keyframes planeFly {
+  0% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(3deg); }
+  50% { transform: translateY(0px) rotate(0deg); }
+  75% { transform: translateY(6px) rotate(-3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes dashLine {
+  0% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes pulseRipple {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.animate-plane-fly {
+  animation: planeFly 4s ease-in-out infinite;
+}
+
+.animate-dash-line {
+  stroke-dasharray: 8 6;
+  animation: dashLine 1.5s linear infinite;
+}
+
+.animate-pulse-ripple {
+  animation: pulseRipple 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot, .animate-spin-slow, .animate-ping, .animate-plane-fly, .animate-dash-line, .animate-pulse-ripple {
+    animation: none !important;
+  }
+}
