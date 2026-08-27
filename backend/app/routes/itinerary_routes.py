@@ -152,15 +152,32 @@ def edit_itinerary(itinerary_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+def _normalize_itinerary_payload(itinerary):
+    if not itinerary or not isinstance(itinerary, dict):
+        return itinerary
+    
+    # Normalize nested itinerary_days relation from Supabase DDL
+    if "itinerary_days" in itinerary and "days" not in itinerary:
+        raw_days = itinerary.pop("itinerary_days", []) or []
+        sorted_days = sorted(raw_days, key=lambda d: d.get("day_number", 0))
+        for day in sorted_days:
+            if "weather_summary" in day and "weather" not in day:
+                day["weather"] = day.get("weather_summary") or {}
+            if "activities" in day and isinstance(day["activities"], list):
+                day["activities"] = sorted(day["activities"], key=lambda a: a.get("sequence_order", 0))
+        itinerary["days"] = sorted_days
+    return itinerary
+
+
 @itinerary_bp.route("/history", methods=["GET"])
 @require_auth
 def get_itinerary_history():
     """
     Returns this user's past itineraries. Reads from Supabase first (the durable
-    source of truth); falls back to the in-memory store for any generated in this
-    process but not yet persisted (e.g. Supabase briefly unavailable at generate time).
+    source of truth); merges with in-memory store for complete history.
     """
     user_id = request.user["id"]
+    seen_ids = set()
     results = []
 
     if supabase_client:
@@ -169,26 +186,26 @@ def get_itinerary_history():
                 "id, title, destination, start_date, end_date, duration_days, "
                 "total_estimated_cost, share_token, created_at"
             ).eq("user_id", user_id).order("created_at", desc=True).limit(50).execute()
-            results = res.data or []
+            for row in (res.data or []):
+                seen_ids.add(row["id"])
+                results.append(row)
         except Exception as e:
             print(f"[Itinerary History Info] Supabase lookup skipped: {e}")
 
-    if not results:
-        seen_ids = set()
-        for it in ITINERARY_STORE.values():
-            if it.get("user_id") == user_id and it.get("id") not in seen_ids:
-                seen_ids.add(it.get("id"))
-                results.append({
-                    "id": it.get("id"),
-                    "title": it.get("title"),
-                    "destination": it.get("destination"),
-                    "start_date": it.get("start_date"),
-                    "end_date": it.get("end_date"),
-                    "duration_days": it.get("duration_days"),
-                    "total_estimated_cost": it.get("total_estimated_cost"),
-                    "share_token": it.get("share_token"),
-                    "created_at": None
-                })
+    for it in ITINERARY_STORE.values():
+        if it.get("user_id") == user_id and it.get("id") and it["id"] not in seen_ids:
+            seen_ids.add(it["id"])
+            results.append({
+                "id": it.get("id"),
+                "title": it.get("title"),
+                "destination": it.get("destination"),
+                "start_date": it.get("start_date"),
+                "end_date": it.get("end_date"),
+                "duration_days": it.get("duration_days"),
+                "total_estimated_cost": it.get("total_estimated_cost"),
+                "share_token": it.get("share_token"),
+                "created_at": None
+            })
 
     return jsonify({"status": "success", "itineraries": results}), 200
 
@@ -206,14 +223,14 @@ def get_itinerary_detail(itinerary_id):
                 "*, itinerary_days(*, activities(*))"
             ).eq("id", itinerary_id).eq("user_id", user_id).single().execute()
             if res.data:
-                itinerary = res.data
+                itinerary = _normalize_itinerary_payload(res.data)
         except Exception as e:
             print(f"[Itinerary Detail Info] Supabase lookup skipped: {e}")
 
     if not itinerary or itinerary.get("user_id") != user_id:
         return jsonify({"status": "error", "message": "Itinerary not found"}), 404
 
-    return jsonify({"status": "success", "itinerary": itinerary}), 200
+    return jsonify({"status": "success", "itinerary": _normalize_itinerary_payload(itinerary)}), 200
 
 
 @itinerary_bp.route("/recommendations", methods=["GET"])
@@ -255,6 +272,7 @@ def get_recommendations():
     return jsonify({"status": "success", **recs}), 200
 
 
+@itinerary_bp.route("/share/<share_token>", methods=["GET"])
 def get_shared_itinerary(share_token):
     itinerary = ITINERARY_STORE.get(share_token)
 
@@ -264,7 +282,7 @@ def get_shared_itinerary(share_token):
                 "*, itinerary_days(*, activities(*))"
             ).eq("share_token", share_token).single().execute()
             if res.data:
-                itinerary = res.data
+                itinerary = _normalize_itinerary_payload(res.data)
         except Exception as e:
             print(f"[Itinerary Share Info] Supabase lookup skipped: {e}")
 
@@ -310,5 +328,6 @@ def get_shared_itinerary(share_token):
     return jsonify({
         "status": "success",
         "is_read_only": True,
-        "itinerary": itinerary
+        "itinerary": _normalize_itinerary_payload(itinerary)
     }), 200
+
