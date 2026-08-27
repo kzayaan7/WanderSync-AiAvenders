@@ -82,6 +82,7 @@ def generate_itinerary():
         result_payload = {
             "id": itinerary_id,
             "user_id": getattr(request, "user", {}).get("id", "guest"),
+            "user_email": getattr(request, "user", {}).get("email", ""),
             "title": raw_itinerary.get("title", f"Trip to {validated.destination}"),
             "destination": validated.destination,
             "destination_lat": lat,

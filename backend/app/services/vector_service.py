@@ -75,6 +75,18 @@ class VectorService:
         if not supabase_client:
             return False
         try:
+            # Ensure profile exists in public.profiles so foreign key constraint passes
+            user_id = itinerary.get("user_id")
+            if user_id and user_id != "guest":
+                try:
+                    user_email = itinerary.get("user_email") or f"{user_id}@wandersync.ai"
+                    supabase_client.table("profiles").upsert({
+                        "id": user_id,
+                        "email": user_email
+                    }, on_conflict="id").execute()
+                except Exception as pe:
+                    print(f"[VectorService Info] Profile auto-creation skipped: {pe}")
+
             supabase_client.table("itineraries").insert({
                 "id": itinerary["id"],
                 "user_id": itinerary["user_id"],
