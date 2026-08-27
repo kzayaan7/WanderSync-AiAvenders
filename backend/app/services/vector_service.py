@@ -32,72 +32,49 @@ def _sanitize_time(time_val: Any, default_time: str = "10:00:00") -> str:
 
 
 class VectorService:
+    _embedding_model = None
+
+    @staticmethod
+    def _get_embedding_model():
+        if VectorService._embedding_model is None:
+            from sentence_transformers import SentenceTransformer
+
+            print("[VectorService] Loading embedding model...")
+            VectorService._embedding_model = SentenceTransformer(
+                "all-MiniLM-L6-v2"
+            )
+            print("[VectorService] Embedding model loaded.")
+
+        return VectorService._embedding_model
+
     @staticmethod
     def generate_embedding(text: str) -> List[float]:
         """
-        Generates a 384-dimensional vector embedding using SentenceTransformers or a 
-        deterministic local feature extraction fallback. 100% free, 0 API cost.
+        Generates a 384-dimensional embedding.
+
+        The SentenceTransformer model is loaded once per Gunicorn worker
+        and reused for subsequent requests.
         """
         try:
-            from sentence_transformers import SentenceTransformer
-            model = SentenceTransformer('all-MiniLM-L6-v2')
-            vec = model.encode(text)
-            return vec.tolist()
-        except Exception:
+            model = VectorService._get_embedding_model()
+
+            vec = model.encode(
+                text,
+                convert_to_numpy=True,
+                normalize_embeddings=True
+            )
+
+            return vec.astype(float).tolist()
+
+        except Exception as e:
+            print(f"[VectorService Warning] Embedding generation failed: {e}")
+
+            # Deterministic 384-dimensional fallback
             np.random.seed(abs(hash(text)) % (2**32))
             dummy_vec = np.random.normal(0, 1, 384)
             dummy_vec = dummy_vec / np.linalg.norm(dummy_vec)
+
             return dummy_vec.tolist()
-
-    @staticmethod
-    def search_user_preferences(user_id: str, query_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
-        """
-        Queries Supabase pgvector cosine similarity index to retrieve relevant user preferences.
-        """
-        if not supabase_client or not user_id or user_id == "guest":
-            return []
-            
-        query_vector = VectorService.generate_embedding(query_text)
-        try:
-            res = supabase_client.rpc('match_preferences', {
-                'query_embedding': query_vector,
-                'match_threshold': 0.5,
-                'match_count': top_k,
-                'p_user_id': user_id
-            }).execute()
-            return res.data if res.data else []
-        except Exception as e:
-            print(f"[VectorService Info] pgvector search fallback: {e}")
-            return []
-
-    @staticmethod
-    def store_user_preference(user_id: str, preference_text: str, category: str = "general") -> bool:
-        """
-        Embeds and persists a user preference/message into preferences_embeddings so future
-        requests can be personalized against travel history (fulfils SRS 1.6.vi).
-        """
-        if not supabase_client or not preference_text or not preference_text.strip() or user_id == "guest":
-            return False
-        try:
-            try:
-                supabase_client.table("profiles").upsert({
-                    "id": user_id,
-                    "email": f"{user_id}@wandersync.ai"
-                }, on_conflict="id").execute()
-            except Exception:
-                pass
-
-            embedding = VectorService.generate_embedding(preference_text)
-            supabase_client.table("preferences_embeddings").insert({
-                "user_id": user_id,
-                "preference_text": preference_text.strip()[:500],
-                "category": category,
-                "embedding": embedding
-            }).execute()
-            return True
-        except Exception as e:
-            print(f"[VectorService Info] preference store skipped: {e}")
-            return False
 
     @staticmethod
     def persist_itinerary(itinerary: Dict[str, Any]) -> bool:
