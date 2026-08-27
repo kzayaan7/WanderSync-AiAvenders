@@ -10,45 +10,35 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # ---------------------------------------------------------
     # CORS
-    # ---------------------------------------------------------
-    # Allow the local Vite frontend and the deployed Vercel frontend
-    # to access the Flask API.
     CORS(
         app,
         resources={
-            r"/*": {
-                "origins": "*",
+            r"/api/*": {
+                "origins": [
+                    "https://wander-sync-ai-avengers.vercel.app",
+                    "http://localhost:5173",
+                ],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
             }
         }
     )
 
-    # ---------------------------------------------------------
-    # Register Route Blueprints
-    # ---------------------------------------------------------
     app.register_blueprint(chat_bp)
     app.register_blueprint(itinerary_bp)
     app.register_blueprint(admin_bp)
 
-    # ---------------------------------------------------------
-    # Health Check
-    # ---------------------------------------------------------
     @app.route("/health", methods=["GET"])
     def health_check():
         return jsonify({
             "status": "healthy",
             "service": "WanderSync-Backend-API",
             "version": "1.0.0",
-            "llm_provider": "Groq (Llama-3.3-70b-versatile)",
+            "llm_provider": "Groq",
             "database": "Supabase PostgreSQL + pgvector"
         }), 200
 
-    # ---------------------------------------------------------
-    # Error Handlers
-    # ---------------------------------------------------------
     @app.errorhandler(404)
     def not_found(e):
         return jsonify({
