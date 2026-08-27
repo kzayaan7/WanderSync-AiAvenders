@@ -4,7 +4,7 @@ import { Send, Bot, User, Mic, MicOff, AlertTriangle } from 'lucide-react'
 // Web Speech API is vendor-prefixed in Chrome/Edge; unsupported in Firefox and some browsers.
 const SpeechRecognitionAPI =
   typeof window !== 'undefined'
-    ? window.SpeechRecognitionEvent || window.webkitSpeechRecognition
+    ? window.SpeechRecognition || window.webkitSpeechRecognition
     : null
 
 export default function ChatInterface({ user, onRequireAuth, onExtractedParams, isGenerating }) {
