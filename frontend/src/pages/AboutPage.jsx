@@ -49,8 +49,8 @@ export default function AboutPage() {
           <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-teal">
             WANDERSYNC ARCHITECTURE
           </span>
-          <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white tracking-tight">HOW WANDERSYNC WORKS</h1>
-          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+          <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-slate-900 tracking-tight">HOW WANDERSYNC WORKS</h1>
+          <p className="text-xs sm:text-sm text-slate-900 leading-relaxed font-medium">
             Built on a Retrieval-Augmented Generation pipeline: conversational input, live external data,
             LLM reasoning, and embeddings-based memory — all wired end-to-end.
           </p>
