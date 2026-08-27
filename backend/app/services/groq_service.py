@@ -20,42 +20,54 @@ class GroqService:
     def _call_json(system_prompt: str, user_prompt: str, temperature: float = 0.2, max_retries: int = 1) -> Optional[Dict[str, Any]]:
         """
         Shared helper for every Groq call that expects strict JSON back.
-        Retries once with a sharper "you returned invalid JSON last time" correction
-        if the first response fails to parse — this is the practical way to make a
-        hosted LLM "answer correctly" without fine-tuning access: constrain, validate,
-        and self-correct rather than trust the first output blindly.
+        Attempts primary model first, falling back to instant/lightweight models
+        if rate limited or unavailable before returning None.
         """
-        client = GroqService.get_client()
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+        try:
+            client = GroqService.get_client()
+        except Exception as ce:
+            print(f"[GroqService Error] Client init failed: {ce}")
+            return None
+
+        fallback_models = [
+            Config.GROQ_MODEL,
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "llama3-70b-8192"
         ]
+        models_to_try = []
+        for m in fallback_models:
+            if m and m not in models_to_try:
+                models_to_try.append(m)
 
         last_error = None
-        for attempt in range(max_retries + 1):
-            try:
-                response = client.chat.completions.create(
-                    messages=messages,
-                    model=Config.GROQ_MODEL,
-                    temperature=temperature,
-                    response_format={"type": "json_object"}
-                )
-                raw = response.choices[0].message.content
-                return json.loads(raw)
-            except (json.JSONDecodeError, Exception) as e:
-                last_error = e
-                if attempt < max_retries:
-                    messages.append({"role": "assistant", "content": str(e)[:200]})
-                    messages.append({
-                        "role": "user",
-                        "content": "Your last response was not valid JSON matching the required schema. "
-                                    "Respond again with ONLY the corrected valid JSON object, nothing else."
-                    })
-                    continue
+        for model in models_to_try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+            for attempt in range(max_retries + 1):
+                try:
+                    response = client.chat.completions.create(
+                        messages=messages,
+                        model=model,
+                        temperature=temperature,
+                        response_format={"type": "json_object"}
+                    )
+                    raw = response.choices[0].message.content
+                    return json.loads(raw)
+                except (json.JSONDecodeError, Exception) as e:
+                    last_error = e
+                    if attempt < max_retries:
+                        messages.append({"role": "assistant", "content": str(e)[:200]})
+                        messages.append({
+                            "role": "user",
+                            "content": "Your last response was not valid JSON matching the required schema. "
+                                        "Respond again with ONLY the corrected valid JSON object, nothing else."
+                        })
+                        continue
+
         error_type = type(last_error).__name__
-        # Surface Groq's structured error code/message when present (e.g. model_decommissioned,
-        # invalid_api_key, rate_limit_exceeded) so a dead model or bad key doesn't silently
-        # look identical to a transient network blip in the logs.
         error_detail = str(last_error)
         response_body = getattr(last_error, "response", None)
         if response_body is not None:
@@ -63,7 +75,7 @@ class GroqService:
                 error_detail = response_body.json()
             except Exception:
                 pass
-        print(f"[GroqService Warning] JSON call failed after retries — type={error_type}: {error_detail}")
+        print(f"[GroqService Warning] All model attempts failed — type={error_type}: {error_detail}")
         return None
 
     @staticmethod
