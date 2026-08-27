@@ -12,18 +12,18 @@ def create_app():
 
     # CORS
     CORS(
-        app,
-        resources={
-            r"/api/*": {
-                "origins": [
-                    "https://wander-sync-ai-avengers.vercel.app",
-                    "http://localhost:5173",
-                ],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                "allow_headers": ["Content-Type", "Authorization"],
-            }
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "https://wander-sync-ai-avengers.vercel.app",
+                "http://localhost:5173",
+            ],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
         }
-    )
+    }
+)
 
     app.register_blueprint(chat_bp)
     app.register_blueprint(itinerary_bp)
