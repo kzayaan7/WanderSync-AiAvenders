@@ -18,22 +18,10 @@ def create_app():
     CORS(
         app,
         resources={
-            r"/api/*": {
-                "origins": [
-                    "http://localhost:5173",
-                    "https://wander-sync-ai-avengers.vercel.app"
-                ],
-                "allow_headers": [
-                    "Content-Type",
-                    "Authorization"
-                ],
-                "methods": [
-                    "GET",
-                    "POST",
-                    "PUT",
-                    "DELETE",
-                    "OPTIONS"
-                ]
+            r"/*": {
+                "origins": "*",
+                "allow_headers": ["Content-Type", "Authorization"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
             }
         }
     )
