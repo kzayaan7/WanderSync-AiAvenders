@@ -61,7 +61,7 @@ function Shell() {
             <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
             <Link to="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
             <Link to="/admin" className="hover:text-primary transition-colors">Control Tower</Link>
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">GitHub</a>
+            <a href="https://github.com/kzayaan7/WanderSync-AiAvenders" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">GitHub</a>
           </div>
         </div>
       </footer>
