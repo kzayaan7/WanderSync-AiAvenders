@@ -39,7 +39,6 @@ export default function AdminOverviewPage() {
     }
 
     useEffect(() => { load() }, [])
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
