@@ -111,16 +111,15 @@ def generate_itinerary():
         # stays warm — on a serverless deploy (e.g. Vercel) that can be a single request. Supabase
         # persistence below is what actually makes history durable; if it fails we now surface that
         # instead of silently reporting success while nothing durable was written.
-        persisted = VectorService.persist_itinerary(result_payload)
-        
+        persisted, persist_error = VectorService.persist_itinerary(result_payload)
+
         return jsonify({
             "status": "success",
             "itinerary": result_payload,
             "persisted": persisted,
             "persistence_warning": None if persisted else (
                 "This trip was generated but could not be permanently saved to the database — "
-                "it will disappear once this session/server instance ends. Check that the backend's "
-                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are correctly configured."
+                f"it will disappear once this session/server instance ends. Reason: {persist_error}"
             )
         }), 201
         

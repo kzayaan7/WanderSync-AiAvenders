@@ -31,6 +31,31 @@ def _sanitize_time(time_val: Any, default_time: str = "10:00:00") -> str:
     return default_time
 
 
+def _safe_float(val: Any, default: float = 0.0):
+    """Coerce LLM/user-supplied values to float instead of raising. Strips stray
+    currency symbols/commas (e.g. "$1,200") before parsing. Returns `default` for
+    None, empty, or unparseable input rather than throwing."""
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    try:
+        cleaned = str(val).strip().replace(",", "")
+        cleaned = "".join(ch for ch in cleaned if ch.isdigit() or ch in ".-")
+        return float(cleaned) if cleaned not in ("", "-", ".") else default
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val: Any, default: int = 0) -> int:
+    if val is None:
+        return default
+    try:
+        return int(float(val)) if not isinstance(val, int) else val
+    except (ValueError, TypeError):
+        return default
+
+
 class VectorService:
     _embedding_model = None
 
@@ -77,19 +102,25 @@ class VectorService:
             return dummy_vec.tolist()
 
     @staticmethod
-    def persist_itinerary(itinerary: Dict[str, Any]) -> bool:
+    def persist_itinerary(itinerary: Dict[str, Any]):
         """
         Durable persistence of a generated itinerary (+ days + activities) to Supabase.
         Robustly sanitizes categories, times, foreign key user profiles, and IDs.
+
+        Returns (success: bool, error: str | None). `error` is the real exception
+        message when success is False, so callers/API responses can surface the
+        actual cause instead of a generic "couldn't save" warning.
         """
         if not supabase_client:
-            print("[VectorService Warning] Supabase client unavailable. Cannot persist itinerary to DB.")
-            return False
+            msg = "Supabase client unavailable (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not configured on the backend)."
+            print(f"[VectorService Warning] {msg}")
+            return False, msg
 
         user_id = itinerary.get("user_id")
         if not user_id or user_id == "guest":
-            print("[VectorService Warning] Guest itinerary generation — persistent DB write skipped.")
-            return False
+            msg = "Guest itinerary generation — persistent DB write skipped."
+            print(f"[VectorService Warning] {msg}")
+            return False, msg
 
         try:
             # 1. Ensure profile exists in public.profiles table to satisfy Foreign Key constraint
@@ -115,14 +146,14 @@ class VectorService:
                 "user_id": user_id,
                 "title": itinerary.get("title", f"Trip to {itinerary.get('destination')}"),
                 "destination": itinerary.get("destination", "Destination"),
-                "destination_lat": float(itinerary.get("destination_lat", 0.0)),
-                "destination_lng": float(itinerary.get("destination_lng", 0.0)),
+                "destination_lat": _safe_float(itinerary.get("destination_lat")),
+                "destination_lng": _safe_float(itinerary.get("destination_lng")),
                 "start_date": itinerary.get("start_date"),
                 "end_date": itinerary.get("end_date"),
-                "duration_days": int(itinerary.get("duration_days", 1)),
+                "duration_days": _safe_int(itinerary.get("duration_days"), 1),
                 "budget_category": budget_cat,
                 "travel_style": itinerary.get("travel_style"),
-                "total_estimated_cost": float(itinerary.get("total_estimated_cost", 0.0)),
+                "total_estimated_cost": _safe_float(itinerary.get("total_estimated_cost")),
                 "currency": itinerary.get("currency", "USD"),
                 "currency_symbol": itinerary.get("currency_symbol", "$"),
                 "share_token": share_token,
@@ -136,7 +167,7 @@ class VectorService:
                 day_record = {
                     "id": day_id,
                     "itinerary_id": itinerary_id,
-                    "day_number": int(day.get("day_number", 1)),
+                    "day_number": _safe_int(day.get("day_number"), 1),
                     "date": day.get("date") or itinerary.get("start_date"),
                     "title": day.get("title", f"Day {day.get('day_number', 1)}"),
                     "summary": day.get("summary", ""),
@@ -155,19 +186,19 @@ class VectorService:
                         "category": _sanitize_category(act.get("category")),
                         "start_time": _sanitize_time(act.get("start_time"), "10:00:00"),
                         "end_time": _sanitize_time(act.get("end_time"), "12:00:00"),
-                        "duration_mins": int(act.get("duration_mins", 60)),
-                        "cost_estimate": float(act.get("cost_estimate", 0.0)),
-                        "lat": float(act.get("lat", 0.0)) if act.get("lat") is not None else None,
-                        "lng": float(act.get("lng", 0.0)) if act.get("lng") is not None else None,
+                        "duration_mins": _safe_int(act.get("duration_mins"), 60),
+                        "cost_estimate": _safe_float(act.get("cost_estimate")),
+                        "lat": _safe_float(act.get("lat")) if act.get("lat") is not None else None,
+                        "lng": _safe_float(act.get("lng")) if act.get("lng") is not None else None,
                         "address": act.get("address", ""),
-                        "sequence_order": int(act.get("sequence_order", idx + 1))
+                        "sequence_order": _safe_int(act.get("sequence_order"), idx + 1)
                     }
                     supabase_client.table("activities").upsert(act_record, on_conflict="id").execute()
 
             print(f"[VectorService Success] Itinerary {itinerary_id} successfully persisted to Supabase database.")
-            return True
+            return True, None
 
         except Exception as e:
             print(f"[VectorService Error] Itinerary persistence failed: {e}")
             traceback.print_exc()
-            return False
+            return False, str(e)
