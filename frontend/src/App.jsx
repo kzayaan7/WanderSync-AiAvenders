@@ -7,8 +7,15 @@ import TravelGuideBot from './components/TravelGuideBot'
 import HomePage from './pages/HomePage'
 import HistoryPage from './pages/HistoryPage'
 import TripDetailPage from './pages/TripDetailPage'
-import AdminPage from './pages/AdminPage'
 import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import FAQPage from './pages/FAQPage'
+import TermsPage from './pages/TermsPage'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminOverviewPage from './pages/admin/AdminOverviewPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminItinerariesPage from './pages/admin/AdminItinerariesPage'
+import AdminMessagesPage from './pages/admin/AdminMessagesPage'
 import { useAuth } from './context/AuthContext'
 import { Compass, Heart } from 'lucide-react'
 
@@ -24,8 +31,16 @@ function Shell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/trip/:id" element={<TripDetailPage />} />
-          <Route path="/admin" element={<AdminPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="itineraries" element={<AdminItinerariesPage />} />
+            <Route path="messages" element={<AdminMessagesPage />} />
+          </Route>
         </Routes>
       </main>
 
@@ -40,8 +55,11 @@ function Shell() {
             <span className="text-slate-400">Adventurous Travel Discovery</span>
           </div>
 
-          <div className="flex items-center gap-6 font-medium text-slate-500">
+          <div className="flex items-center gap-6 font-medium text-slate-500 flex-wrap justify-center">
             <Link to="/about" className="hover:text-primary transition-colors">How It Works</Link>
+            <Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link>
+            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
+            <Link to="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
             <Link to="/admin" className="hover:text-primary transition-colors">Control Tower</Link>
             <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">GitHub</a>
           </div>

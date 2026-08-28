@@ -87,5 +87,22 @@ export const apiService = {
   getAdminItineraries: async () => {
     const res = await apiClient.get('/admin/itineraries')
     return res.data
+  },
+
+  getAdminMessages: async () => {
+    const res = await apiClient.get('/admin/messages')
+    return res.data
+  },
+
+  // Destination photo lookup (Wikipedia-backed, no API key) — replaces the
+  // old hardcoded Unsplash URL map for any destination not in that list.
+  getDestinationImage: async (query) => {
+    const res = await apiClient.get('/media/destination-image', { params: { query } })
+    return res.data
+  },
+
+  submitContactMessage: async (payload) => {
+    const res = await apiClient.post('/contact', payload)
+    return res.data
   }
 }

@@ -164,12 +164,19 @@ Respond ONLY with the JSON object, no other text.{preferences_context}
         total_budget: float,
         interests: List[str],
         weather_info: Dict[str, Any] = None,
-        poi_suggestions: List[Dict[str, Any]] = None
+        poi_suggestions: List[Dict[str, Any]] = None,
+        currency: str = "USD",
+        currency_symbol: str = "$"
     ) -> Dict[str, Any]:
         """
         Generates a complete day-by-day travel itinerary with time slots and POIs using Groq Llama-3.3-70B.
         Output is validated and auto-repaired against the requested day count so a partial/malformed
         LLM response never silently produces a broken itinerary.
+
+        currency/currency_symbol is the user's selected currency. Without telling the model which
+        currency total_budget is denominated in, it defaulted to USD-scale pricing regardless of what
+        was actually picked in the form — e.g. a PKR 200,000 budget produced activity costs sized for
+        $200,000. Passing currency through keeps generated costs in the same unit the user chose.
         """
         if not Config.GROQ_API_KEY:
             return GroqService._mock_full_itinerary(destination, start_date, end_date, duration_days)
@@ -182,7 +189,7 @@ Respond ONLY with the JSON object, no other text.{preferences_context}
 
         system_prompt = f"""You are WanderSync AI, a master travel itinerary planner.
 Generate a multi-day itinerary for {destination} from {start_date} to {end_date} — EXACTLY {duration_days} day(s), no more, no fewer.
-Budget Tier: {budget_category} (${total_budget}). Every activity's cost_estimate must be realistic for this tier, and the sum across all days should roughly total to total_estimated_cost without exceeding ${total_budget} by more than 10%.
+Budget Tier: {budget_category} ({currency_symbol}{total_budget} {currency}). ALL monetary values you output (cost_estimate per activity and total_estimated_cost) MUST be plain numbers denominated in {currency} — never convert to USD or another currency, and never include currency symbols inside the numbers themselves. Every activity's cost_estimate must be realistic for this tier IN {currency}, and the sum across all days should roughly total to total_estimated_cost without exceeding {currency_symbol}{total_budget} by more than 10%.
 User Interests: {', '.join(interests) if interests else 'General sightseeing'}.{poi_hint}
 
 Return ONLY valid JSON matching this schema exactly:

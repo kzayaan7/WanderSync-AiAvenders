@@ -4,6 +4,8 @@ from app.config import Config
 from app.routes.chat_routes import chat_bp
 from app.routes.itinerary_routes import itinerary_bp
 from app.routes.admin_routes import admin_bp
+from app.routes.media_routes import media_bp
+from app.routes.contact_routes import contact_bp
 
 
 def create_app():
@@ -28,6 +30,8 @@ def create_app():
     app.register_blueprint(chat_bp)
     app.register_blueprint(itinerary_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(media_bp)
+    app.register_blueprint(contact_bp)
 
     @app.route("/health", methods=["GET"])
     def health_check():

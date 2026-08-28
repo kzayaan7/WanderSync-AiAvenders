@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { ShieldCheck, LogIn, Copy, Check, Terminal, WifiOff } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import AdminDashboard from '../components/AdminDashboard'
+import { useAuth } from '../../context/AuthContext'
+import AdminDashboard from '../../components/AdminDashboard'
 
 const PROMOTE_SQL = `UPDATE public.profiles SET is_admin = TRUE WHERE email = 'YOUR_EMAIL_HERE';`
 

@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { Calendar, CloudSun, DollarSign, Clock, MapPin, Download, Share2, Plus, Trash2, Compass } from 'lucide-react'
 import { exportToPDF, exportToICS } from '../utils/exportUtils'
-import { getDestinationImage } from '../utils/destinationImages'
+import { useDestinationImage } from '../hooks/usedestinationimage'
 
 export default function ItineraryView({ itinerary, onEditItinerary }) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0)
   const [copiedShare, setCopiedShare] = useState(false)
   const [newActivityTitle, setNewActivityTitle] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const heroPhoto = useDestinationImage(itinerary?.destination)
 
   if (!itinerary || !itinerary.days || itinerary.days.length === 0) {
     return (
@@ -25,7 +26,6 @@ export default function ItineraryView({ itinerary, onEditItinerary }) {
 
   const days = itinerary.days
   const activeDay = days[selectedDayIndex] || days[0]
-  const heroPhoto = getDestinationImage(itinerary.destination)
   const currencySymbol = itinerary.currency_symbol || '$'
 
   const handleCopyShareLink = () => {
@@ -147,11 +147,10 @@ export default function ItineraryView({ itinerary, onEditItinerary }) {
           <button
             key={idx}
             onClick={() => setSelectedDayIndex(idx)}
-            className={`px-5 py-2.5 rounded-full text-xs font-extrabold shrink-0 transition-all ${
-              selectedDayIndex === idx
+            className={`px-5 py-2.5 rounded-full text-xs font-extrabold shrink-0 transition-all ${selectedDayIndex === idx
                 ? 'bg-primary bg-[#0F766E] text-white shadow-teal'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
-            }`}
+              }`}
           >
             Day {day.day_number}
           </button>

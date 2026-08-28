@@ -83,8 +83,26 @@ def list_users():
 def list_itineraries():
     try:
         res = supabase_client.table("itineraries").select(
-            "id, title, destination, user_id, total_estimated_cost, is_public, created_at"
+            "id, title, destination, user_id, total_estimated_cost, currency, "
+            "currency_symbol, is_public, created_at"
         ).order("created_at", desc=True).limit(100).execute()
         return jsonify({"status": "success", "itineraries": res.data or []}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@admin_bp.route("/messages", methods=["GET"])
+@require_admin
+def list_contact_messages():
+    """Contact form submissions, for the admin 'Messages' page."""
+    try:
+        res = supabase_client.table("contact_messages").select(
+            "id, name, email, subject, message, is_read, created_at"
+        ).order("created_at", desc=True).limit(200).execute()
+        return jsonify({"status": "success", "messages": res.data or []}), 200
+    except Exception as e:
+        # Fall back to whatever's in the in-process store (e.g. table not
+        # migrated yet, or Supabase briefly unreachable) instead of a hard error.
+        from app.routes.contact_routes import CONTACT_STORE
+        print(f"[Admin Info] contact_messages lookup skipped: {e}")
+        return jsonify({"status": "success", "messages": list(reversed(CONTACT_STORE))}), 200

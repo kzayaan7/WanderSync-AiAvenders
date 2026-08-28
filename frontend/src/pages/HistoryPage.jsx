@@ -3,7 +3,42 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Map, Compass, Sparkles, AlertCircle, ArrowRight, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { apiService } from '../services/apiService'
-import { getDestinationImage } from '../utils/destinationImages'
+import { useDestinationImage } from '../hooks/usedestinationimage'
+
+function TripCard({ it, onOpen }) {
+  const img = useDestinationImage(it.destination)
+  const currencySymbol = it.currency_symbol || '$'
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left wandermap-card rounded-2xl overflow-hidden flex flex-col sm:flex-row items-stretch hover:shadow-soft-xl hover:border-primary transition-all group"
+    >
+      <div className="sm:w-40 h-28 sm:h-auto relative overflow-hidden shrink-0">
+        <img src={img} alt={it.destination} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent sm:hidden" />
+      </div>
+
+      <div className="p-4 flex-1 flex flex-col justify-between">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+            {it.duration_days ? `${it.duration_days}-Day Trip` : 'Itinerary'}
+          </span>
+          <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-primary transition-colors font-display line-clamp-1">
+            {it.title}
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">{it.destination}</p>
+        </div>
+
+        <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span className="font-extrabold text-slate-900">{currencySymbol}{it.total_estimated_cost}</span>
+          <span className="font-bold text-primary group-hover:translate-x-1 transition-transform flex items-center gap-1">
+            View Trip <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+      </div>
+    </button>
+  )
+}
 
 export default function HistoryPage() {
   const { user, openAuth } = useAuth()
@@ -28,7 +63,7 @@ export default function HistoryPage() {
 
     apiService.getRecommendations()
       .then((res) => setRecommendations(res.recommendations || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setRecsLoading(false))
   }, [user])
 
@@ -98,40 +133,9 @@ export default function HistoryPage() {
           )}
 
           <div className="grid grid-cols-1 gap-4">
-            {itineraries.map((it) => {
-              const img = getDestinationImage(it.destination)
-              return (
-                <button
-                  key={it.id}
-                  onClick={() => navigate(`/trip/${it.id}`)}
-                  className="w-full text-left wandermap-card rounded-2xl overflow-hidden flex flex-col sm:flex-row items-stretch hover:shadow-soft-xl hover:border-primary transition-all group"
-                >
-                  <div className="sm:w-40 h-28 sm:h-auto relative overflow-hidden shrink-0">
-                    <img src={img} alt={it.destination} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent sm:hidden" />
-                  </div>
-
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                        {it.duration_days ? `${it.duration_days}-Day Trip` : 'Itinerary'}
-                      </span>
-                      <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-primary transition-colors font-display line-clamp-1">
-                        {it.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{it.destination}</p>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="font-extrabold text-slate-900">${it.total_estimated_cost}</span>
-                      <span className="font-bold text-primary group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                        View Trip <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
+            {itineraries.map((it) => (
+              <TripCard key={it.id} it={it} onOpen={() => navigate(`/trip/${it.id}`)} />
+            ))}
           </div>
         </div>
 

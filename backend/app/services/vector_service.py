@@ -120,7 +120,10 @@ class VectorService:
                 "start_date": itinerary.get("start_date"),
                 "end_date": itinerary.get("end_date"),
                 "budget_category": budget_cat,
+                "travel_style": itinerary.get("travel_style"),
                 "total_estimated_cost": float(itinerary.get("total_estimated_cost", 0.0)),
+                "currency": itinerary.get("currency", "USD"),
+                "currency_symbol": itinerary.get("currency_symbol", "$"),
                 "share_token": share_token,
                 "is_public": bool(itinerary.get("is_public", False))
             }

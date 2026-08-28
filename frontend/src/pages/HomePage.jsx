@@ -9,6 +9,44 @@ import { useAuth } from '../context/AuthContext'
 import { apiService } from '../services/apiService'
 import { Sparkles, AlertCircle, History, MapPin, Compass, ArrowRight, Sun, Calendar } from 'lucide-react'
 import { FEATURED_DESTINATIONS } from '../utils/destinationImages'
+import { useDestinationImage } from '../hooks/usedestinationimage'
+
+function FeaturedDestinationCard({ dest, onSelect }) {
+  const img = useDestinationImage(dest.name)
+  return (
+    <div
+      onClick={onSelect}
+      className="group cursor-pointer wandermap-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+    >
+      <div className="relative h-44 overflow-hidden">
+        <img
+          src={img}
+          alt={dest.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm tracking-wide">
+          {dest.tag}
+        </span>
+        <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold bg-secondary bg-[#F97316] text-white shadow-coral tracking-wide">
+          {dest.budget}
+        </span>
+      </div>
+      <div className="p-4 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="font-bold text-slate-900 text-sm group-hover:text-primary transition-colors tracking-wide">{dest.name}</h3>
+          <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed tracking-normal">{dest.description}</p>
+        </div>
+        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-primary tracking-wide">
+          <span>{dest.duration} Trip</span>
+          <span className="group-hover:translate-x-1 transition-transform flex items-center gap-1">
+            Select <ArrowRight className="w-3 h-3" />
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const { user, requireAuth, openAuth } = useAuth()
@@ -175,38 +213,7 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURED_DESTINATIONS.map((dest, idx) => (
-            <div
-              key={idx}
-              onClick={() => handleQuickDestinationSelect(dest.name)}
-              className="group cursor-pointer wandermap-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="relative h-44 overflow-hidden">
-                <img
-                  src={dest.image}
-                  alt={dest.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-md shadow-sm tracking-wide">
-                  {dest.tag}
-                </span>
-                <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold bg-secondary bg-[#F97316] text-white shadow-coral tracking-wide">
-                  {dest.budget}
-                </span>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-primary transition-colors tracking-wide">{dest.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed tracking-normal">{dest.description}</p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-primary tracking-wide">
-                  <span>{dest.duration} Trip</span>
-                  <span className="group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                    Select <ArrowRight className="w-3 h-3" />
-                  </span>
-                </div>
-              </div>
-            </div>
+            <FeaturedDestinationCard key={idx} dest={dest} onSelect={() => handleQuickDestinationSelect(dest.name)} />
           ))}
         </div>
       </div>

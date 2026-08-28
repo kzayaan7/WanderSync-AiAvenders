@@ -46,7 +46,9 @@ def generate_itinerary():
             total_budget=validated.total_budget,
             interests=validated.interests or [],
             weather_info=weather_map,
-            poi_suggestions=pois
+            poi_suggestions=pois,
+            currency=validated.currency,
+            currency_symbol=validated.currency_symbol
         )
         
         # 6. Apply Greedy Optimization & attach lat/lng coordinates to activities
@@ -91,6 +93,10 @@ def generate_itinerary():
             "end_date": validated.end_date,
             "duration_days": duration,
             "total_estimated_cost": raw_itinerary.get("total_estimated_cost", validated.total_budget),
+            "currency": validated.currency,
+            "currency_symbol": validated.currency_symbol,
+            "budget_category": validated.budget_category,
+            "travel_style": validated.travel_style,
             "share_token": share_token,
             "is_public": False,
             "days": days_data
@@ -101,11 +107,21 @@ def generate_itinerary():
 
         # Best-effort persistence to Supabase (falls back to in-memory store above if it fails,
         # e.g. for guest sessions with no profiles row) so shared links/history survive restarts.
-        VectorService.persist_itinerary(result_payload)
+        # NOTE: the in-memory ITINERARY_STORE above only lives for as long as this backend process
+        # stays warm — on a serverless deploy (e.g. Vercel) that can be a single request. Supabase
+        # persistence below is what actually makes history durable; if it fails we now surface that
+        # instead of silently reporting success while nothing durable was written.
+        persisted = VectorService.persist_itinerary(result_payload)
         
         return jsonify({
             "status": "success",
-            "itinerary": result_payload
+            "itinerary": result_payload,
+            "persisted": persisted,
+            "persistence_warning": None if persisted else (
+                "This trip was generated but could not be permanently saved to the database — "
+                "it will disappear once this session/server instance ends. Check that the backend's "
+                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are correctly configured."
+            )
         }), 201
         
     except Exception as e:
@@ -184,7 +200,7 @@ def get_itinerary_history():
         try:
             res = supabase_client.table("itineraries").select(
                 "id, title, destination, start_date, end_date, duration_days, "
-                "total_estimated_cost, share_token, created_at"
+                "total_estimated_cost, currency, currency_symbol, share_token, created_at"
             ).eq("user_id", user_id).order("created_at", desc=True).limit(50).execute()
             for row in (res.data or []):
                 seen_ids.add(row["id"])
@@ -203,6 +219,8 @@ def get_itinerary_history():
                 "end_date": it.get("end_date"),
                 "duration_days": it.get("duration_days"),
                 "total_estimated_cost": it.get("total_estimated_cost"),
+                "currency": it.get("currency"),
+                "currency_symbol": it.get("currency_symbol"),
                 "share_token": it.get("share_token"),
                 "created_at": None
             })
@@ -330,4 +348,3 @@ def get_shared_itinerary(share_token):
         "is_read_only": True,
         "itinerary": _normalize_itinerary_payload(itinerary)
     }), 200
-

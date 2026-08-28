@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf'
 export const exportToPDF = (itinerary) => {
   if (!itinerary) return
 
+  const currencySymbol = itinerary.currency_symbol || '$'
   const doc = new jsPDF()
   let y = 20
 
@@ -15,10 +16,10 @@ export const exportToPDF = (itinerary) => {
   doc.setFontSize(11)
   doc.setTextColor(100, 116, 139)
   doc.text(`Destination: ${itinerary.destination} | Dates: ${itinerary.start_date} to ${itinerary.end_date}`, 14, y)
-  
+
   y += 6
-  doc.text(`Total Budget: $${itinerary.total_estimated_cost} | Share Token: ${itinerary.share_token}`, 14, y)
-  
+  doc.text(`Total Budget: ${currencySymbol}${itinerary.total_estimated_cost} | Share Token: ${itinerary.share_token}`, 14, y)
+
   y += 10
   doc.setLineWidth(0.5)
   doc.setDrawColor(226, 232, 240)
@@ -55,7 +56,7 @@ export const exportToPDF = (itinerary) => {
       doc.setFontSize(10)
       doc.setTextColor(30, 41, 59)
       const timeStr = act.start_time ? `[${act.start_time} - ${act.end_time}] ` : ''
-      doc.text(`• ${timeStr}${act.title} - $${act.cost_estimate || 0}`, 18, y)
+      doc.text(`• ${timeStr}${act.title} - ${currencySymbol}${act.cost_estimate || 0}`, 18, y)
       y += 5
 
       if (act.description) {
