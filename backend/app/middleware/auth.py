@@ -1,7 +1,4 @@
 import functools
-import base64
-import json
-import jwt
 from flask import request, jsonify
 from supabase import create_client, Client
 from app.config import Config
@@ -14,72 +11,23 @@ if Config.SUPABASE_URL and Config.SUPABASE_SERVICE_ROLE_KEY:
         print(f"[Auth Middleware Warning] Supabase client init error: {e}")
 
 
-# Supabase JWT secret for local token verification.
-# Find it in: Supabase Dashboard → Settings → API → JWT Secret
-SUPABASE_JWT_SECRET = Config.SUPABASE_JWT_SECRET or ""
-
-
-def _decode_jwt_payload(token: str) -> dict | None:
-    """
-    Decodes a Supabase JWT locally without any network call.
-    1. If JWT secret is configured → verify signature (production).
-    2. Otherwise → decode payload without verification (dev fallback).
-    """
-    import time as _time
-    ALLOWED_ALGORITHMS = ["HS256", "HS384", "HS512"]
-
-    # --- Path 1: Signature-verified decode (production) ---
-    if SUPABASE_JWT_SECRET:
-        try:
-            payload = jwt.decode(
-                token, SUPABASE_JWT_SECRET,
-                algorithms=ALLOWED_ALGORITHMS,
-                audience="authenticated"
-            )
-            if payload and payload.get("exp", 0) >= _time.time():
-                return payload
-            return None
-        except jwt.exceptions.InvalidAlgorithmError:
-            pass  # Token algorithm not in allowed list — fall through to raw decode
-        except Exception as e:
-            print(f"[Auth Warning] Verified JWT decode failed: {e}")
-            return None
-
-    # --- Path 2: Raw base64 decode without verification (dev / no secret) ---
-    try:
-        parts = token.split(".")
-        if len(parts) != 3:
-            return None
-        payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(payload_b64))
-        if not payload or payload.get("exp", 0) < _time.time():
-            return None
-        return payload
-    except Exception as e:
-        print(f"[Auth Warning] Raw JWT decode failed: {e}")
-        return None
-
-
 def _resolve_user_from_token():
     """
-    Extracts user info from the Supabase JWT in the Authorization header.
-    Decodes locally (no network call) for speed and reliability.
+    Verifies the Supabase Auth JWT in the Authorization header.
+    Returns a {id, email} dict on success, or None if missing/invalid.
     """
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return None
     token = auth_header.split("Bearer ")[1].strip()
-    if not token:
+    if not token or not supabase_client:
         return None
-
-    payload = _decode_jwt_payload(token)
-    if not payload:
-        return None
-
-    user_id = payload.get("sub")
-    email = payload.get("email", payload.get("user_metadata", {}).get("email", ""))
-    if user_id:
-        return {"id": user_id, "email": email}
+    try:
+        user_res = supabase_client.auth.get_user(token)
+        if user_res and user_res.user:
+            return {"id": user_res.user.id, "email": user_res.user.email}
+    except Exception as e:
+        print(f"[Auth Error] JWT verification failed: {e}")
     return None
 
 

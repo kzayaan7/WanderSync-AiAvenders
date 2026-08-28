@@ -13,14 +13,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   if (!isOpen) return null
 
-  // Timeout wrapper — prevents the UI from hanging if Supabase API is unreachable
-  const withTimeout = (promise, ms = 10000) => {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out. Supabase may be unreachable — check your network or try again shortly.')), ms)
-      )
-    ])
+  // Retry with timeout — handles Supabase wake-up delays and transient network issues
+  const withRetry = async (fn, { retries = 2, timeoutMs = 8000 } = {}) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await Promise.race([
+          fn(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), timeoutMs)
+          )
+        ])
+      } catch (err) {
+        if (attempt === retries) throw err
+        // Wait before retrying (1s, 2s...)
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      }
+    }
   }
 
   const handleAuth = async (e) => {
@@ -31,21 +39,26 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     try {
       if (useMagicLink) {
-        const { error } = await withTimeout(supabase.auth.signInWithOtp({ email }))
+        const { error } = await withRetry(() => supabase.auth.signInWithOtp({ email }))
         if (error) throw error
         setSuccessMsg('Magic link sent to your email! Check your inbox.')
       } else if (isSignUp) {
-        const { data, error } = await withTimeout(supabase.auth.signUp({ email, password }))
+        const { data, error } = await withRetry(() => supabase.auth.signUp({ email, password }))
         if (error) throw error
         setSuccessMsg('Account created successfully! You are now logged in.')
         if (data.user) onAuthSuccess(data.user)
       } else {
-        const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }))
+        const { data, error } = await withRetry(() => supabase.auth.signInWithPassword({ email, password }))
         if (error) throw error
         if (data.user) onAuthSuccess(data.user)
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Authentication failed.')
+      const msg = err.message || ''
+      if (msg.includes('timeout')) {
+        setErrorMsg('Could not reach Supabase after multiple attempts. Your production app at Vercel should work fine — this is a local network issue. Try: (1) restarting your router, (2) using a mobile hotspot, or (3) opening the Vercel production URL instead.')
+      } else {
+        setErrorMsg(msg || 'Authentication failed.')
+      }
     } finally {
       setLoading(false)
     }

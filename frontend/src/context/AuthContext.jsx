@@ -12,19 +12,22 @@ export function AuthProvider({ children }) {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
 
   useEffect(() => {
-    // Timeout wrapper so the app doesn't freeze if Supabase is unreachable
-    const withTimeout = (promise, ms = 8000) =>
-      Promise.race([promise, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))])
+    const fetchSession = async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const result = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000))
+          ])
+          return result.data.session?.user ?? null
+        } catch {
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+        }
+      }
+      return null
+    }
 
-    withTimeout(supabase.auth.getSession())
-      .then(({ data: { session } }) => {
-        setUser(session?.user ?? null)
-      })
-      .catch(() => {
-        // Supabase unreachable or timed out — start logged out
-        setUser(null)
-      })
-      .finally(() => setAuthChecked(true))
+    fetchSession().then(setUser).finally(() => setAuthChecked(true))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
