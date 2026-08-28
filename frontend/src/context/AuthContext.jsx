@@ -12,10 +12,19 @@ export function AuthProvider({ children }) {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setAuthChecked(true)
-    })
+    // Timeout wrapper so the app doesn't freeze if Supabase is unreachable
+    const withTimeout = (promise, ms = 8000) =>
+      Promise.race([promise, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))])
+
+    withTimeout(supabase.auth.getSession())
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+      })
+      .catch(() => {
+        // Supabase unreachable or timed out — start logged out
+        setUser(null)
+      })
+      .finally(() => setAuthChecked(true))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
