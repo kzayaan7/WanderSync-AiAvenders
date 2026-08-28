@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS public.itineraries (
     duration_days INTEGER GENERATED ALWAYS AS (end_date - start_date + 1) STORED,
     budget_category TEXT CHECK (budget_category IN ('backpacker', 'moderate', 'luxury', 'custom')),
     total_estimated_cost NUMERIC(10, 2) DEFAULT 0.00,
+    currency TEXT NOT NULL DEFAULT 'USD',
+    currency_symbol TEXT NOT NULL DEFAULT '$',
     travel_style TEXT,
     share_token UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
     is_public BOOLEAN DEFAULT FALSE NOT NULL,
@@ -130,21 +132,26 @@ ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users manage their own profile
+DROP POLICY IF EXISTS profiles_owner_policy ON public.profiles;
 CREATE POLICY profiles_owner_policy ON public.profiles
     FOR ALL USING (auth.uid() = id);
 
 -- Preferences Embeddings: Users manage their own embeddings
+DROP POLICY IF EXISTS preferences_owner_policy ON public.preferences_embeddings;
 CREATE POLICY preferences_owner_policy ON public.preferences_embeddings
     FOR ALL USING (auth.uid() = user_id);
 
 -- Itineraries: Owner has full access; Public can read if public or token matches
+DROP POLICY IF EXISTS itineraries_owner_policy ON public.itineraries;
 CREATE POLICY itineraries_owner_policy ON public.itineraries
     FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS itineraries_public_read_policy ON public.itineraries;
 CREATE POLICY itineraries_public_read_policy ON public.itineraries
     FOR SELECT USING (is_public = TRUE OR share_token IS NOT NULL);
 
 -- Itinerary Days: Accessible if parent itinerary belongs to user or is shared
+DROP POLICY IF EXISTS days_owner_policy ON public.itinerary_days;
 CREATE POLICY days_owner_policy ON public.itinerary_days
     FOR ALL USING (
         EXISTS (
@@ -154,6 +161,7 @@ CREATE POLICY days_owner_policy ON public.itinerary_days
         )
     );
 
+DROP POLICY IF EXISTS days_public_read_policy ON public.itinerary_days;
 CREATE POLICY days_public_read_policy ON public.itinerary_days
     FOR SELECT USING (
         EXISTS (
@@ -164,6 +172,7 @@ CREATE POLICY days_public_read_policy ON public.itinerary_days
     );
 
 -- Activities: Accessible if parent itinerary belongs to user or is shared
+DROP POLICY IF EXISTS activities_owner_policy ON public.activities;
 CREATE POLICY activities_owner_policy ON public.activities
     FOR ALL USING (
         EXISTS (
@@ -173,6 +182,7 @@ CREATE POLICY activities_owner_policy ON public.activities
         )
     );
 
+DROP POLICY IF EXISTS activities_public_read_policy ON public.activities;
 CREATE POLICY activities_public_read_policy ON public.activities
     FOR SELECT USING (
         EXISTS (
@@ -183,6 +193,7 @@ CREATE POLICY activities_public_read_policy ON public.activities
     );
 
 -- Sessions: Users manage their own sessions
+DROP POLICY IF EXISTS sessions_owner_policy ON public.sessions;
 CREATE POLICY sessions_owner_policy ON public.sessions
     FOR ALL USING (auth.uid() = user_id);
 

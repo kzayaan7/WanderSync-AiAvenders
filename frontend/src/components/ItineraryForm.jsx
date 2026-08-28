@@ -108,6 +108,30 @@ export default function ItineraryForm({ user, onRequireAuth, extractedParams, on
       if (extractedParams.interests && extractedParams.interests.length > 0) {
         setInterests(extractedParams.interests.join(', '))
       }
+
+      // Currency from chat
+      if (extractedParams.currency) {
+        const matched = CURRENCIES.find(
+          (c) => c.code.toUpperCase() === extractedParams.currency.toUpperCase()
+        )
+        if (matched) setCurrency(matched.code)
+      }
+
+      // Dates from chat
+      if (extractedParams.start_date) setStartDate(extractedParams.start_date)
+      if (extractedParams.end_date) setEndDate(extractedParams.end_date)
+
+      // If only duration_days is available (no explicit dates), compute end_date from start_date
+      if (extractedParams.duration_days && extractedParams.start_date && !extractedParams.end_date) {
+        try {
+          const start = new Date(extractedParams.start_date)
+          start.setDate(start.getDate() + extractedParams.duration_days - 1)
+          const endStr = start.toISOString().split('T')[0]
+          setEndDate(endStr)
+        } catch { /* ignore invalid date */ }
+      } else if (extractedParams.duration_days && !extractedParams.start_date && !extractedParams.end_date) {
+        // Only duration given, no dates — leave dates as-is but nothing to compute
+      }
     }
   }, [extractedParams])
 

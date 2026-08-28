@@ -70,6 +70,10 @@ def handle_chat_message():
                 "duration_days": extracted.get("duration_days"),
                 "budget_category": extracted.get("budget_category"),
                 "total_budget": extracted.get("total_budget"),
+                "currency": extracted.get("currency"),
+                "currency_symbol": extracted.get("currency_symbol"),
+                "start_date": extracted.get("start_date"),
+                "end_date": extracted.get("end_date"),
                 "interests": extracted.get("interests", [])
             },
             "ready_to_generate": extracted.get(
