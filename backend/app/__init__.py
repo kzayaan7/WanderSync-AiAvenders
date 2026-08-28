@@ -20,6 +20,8 @@ def create_app():
             "origins": [
                 "https://wander-sync-ai-avengers.vercel.app",
                 "http://localhost:5173",
+                "http://192.168.0.106:5173",
+                "http://127.0.0.1:5173",
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],

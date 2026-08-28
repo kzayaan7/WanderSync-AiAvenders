@@ -119,6 +119,7 @@ class VectorService:
                 "destination_lng": float(itinerary.get("destination_lng", 0.0)),
                 "start_date": itinerary.get("start_date"),
                 "end_date": itinerary.get("end_date"),
+                "duration_days": int(itinerary.get("duration_days", 1)),
                 "budget_category": budget_cat,
                 "travel_style": itinerary.get("travel_style"),
                 "total_estimated_cost": float(itinerary.get("total_estimated_cost", 0.0)),
