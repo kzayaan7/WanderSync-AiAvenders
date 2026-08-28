@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Calendar, CloudSun, DollarSign, Clock, MapPin, Download, Share2, Plus, Trash2, Compass } from 'lucide-react'
 import { exportToPDF, exportToICS } from '../utils/exportUtils'
-import { useDestinationImage } from '../hooks/usedestinationimage'
+import { useDestinationImage } from '../hooks/useDestinationImage'
 
 export default function ItineraryView({ itinerary, onEditItinerary }) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0)

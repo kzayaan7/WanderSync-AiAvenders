@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Map, Compass, Sparkles, AlertCircle, ArrowRight, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { apiService } from '../services/apiService'
-import { useDestinationImage } from '../hooks/usedestinationimage'
+import { useDestinationImage } from '../hooks/useDestinationImage'
 
 function TripCard({ it, onOpen }) {
   const img = useDestinationImage(it.destination)

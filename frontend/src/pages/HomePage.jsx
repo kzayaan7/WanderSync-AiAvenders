@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { apiService } from '../services/apiService'
 import { Sparkles, AlertCircle, History, MapPin, Compass, ArrowRight, Sun, Calendar } from 'lucide-react'
 import { FEATURED_DESTINATIONS } from '../utils/destinationImages'
-import { useDestinationImage } from '../hooks/usedestinationimage'
+import { useDestinationImage } from '../hooks/useDestinationImage'
 
 function FeaturedDestinationCard({ dest, onSelect }) {
   const img = useDestinationImage(dest.name)
